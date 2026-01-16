@@ -17,17 +17,33 @@ Including another URLconf
 import os
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from . import views
+
 
 def api_root(request):
-    codespace_name = os.environ.get('CODESPACE_NAME', 'localhost')
-    api_url = f"https://{codespace_name}-8000.app.github.dev/api/activities/"
+    codespace_name = os.environ.get('CODESPACE_NAME')
+    if codespace_name:
+        base = f"https://{codespace_name}-8000.app.github.dev"
+    else:
+        base = "http://localhost:8000"
+    api_url = f"{base}/api/activities/"
     return JsonResponse({
         "message": "Octofit API Root",
         "example_endpoint": api_url
     })
 
+
+router = routers.DefaultRouter()
+router.register(r'teams', views.TeamViewSet)
+router.register(r'users', views.UserViewSet)
+router.register(r'activities', views.ActivityViewSet)
+router.register(r'workouts', views.WorkoutViewSet)
+router.register(r'leaderboard', views.LeaderboardViewSet)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', api_root),
+    path('api/', api_root, name='api-root'),
+    path('api/', include(router.urls)),
 ]
